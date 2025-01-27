@@ -1,0 +1,20 @@
+- name: Restart the Cribl Worker Nodes one by one.
+  hosts: all
+  become: true 
+  serial: 1
+  tasks:
+   - name: Restarting node
+     ansible.builtin.systemd:
+      name: cribl
+      state: restarted
+   - name: Wait until HTTP status is 200
+     ansible.builtin.uri:
+      url: 'http://localhost:9000/api/v1/health/'
+      return_content: true
+      validate_certs: false
+      status_code:
+       - 200
+     until: cribl_output.status == 200
+     retries: 24 # Retries for 24 * 5 seconds = 120 seconds = 2 minutes
+     delay: 5 # Every 5 seconds
+     register: cribl_output
